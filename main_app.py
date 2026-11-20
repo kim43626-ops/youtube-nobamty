@@ -30,9 +30,13 @@ st.title('유튜브 노밤티 분석 보고서')
 st.caption('엑셀 콘텐츠 성과와 공개 YouTube 데이터를 확인합니다.')
 with st.sidebar:
     st.header('데이터 설정')
-    upload=st.file_uploader('엑셀 파일 업로드',type=['xlsx'])
-    default=None
-    st.caption('배포본에는 원본 엑셀이 포함되지 않습니다. 분석할 파일을 업로드해 주세요.')
+    upload=st.file_uploader('다른 엑셀 파일 사용 (선택)',type=['xlsx'])
+    default=Path(__file__).resolve().parent / 'data' / 'youtube_data.xlsx'
+    if default.is_file():
+        st.caption('기본 데이터: 현대카드 유튜브 RAW 데이터')
+    else:
+        st.warning('기본 엑셀 파일을 찾을 수 없습니다. data/youtube_data.xlsx가 배포되었는지 확인해 주세요.')
+        default=None
     try:
         try:
             configured_key=str(st.secrets.get('YOUTUBE_API_KEY','')).strip()
@@ -42,11 +46,11 @@ with st.sidebar:
     except (OSError,UnicodeError):
         configured_key=''
         st.warning('API 설정을 읽을 수 없습니다. Streamlit Secrets를 확인해 주세요.')
-    entered_key=st.text_input('YouTube Data API 키 (직접 입력 시 우선)',type='password',help='직접 입력한 키는 세션에서만 사용됩니다.').strip()
-    key=entered_key or configured_key
-    if configured_key and not entered_key: st.caption('저장된 API 키를 사용합니다. 값은 화면에 표시하지 않습니다.')
+    key=configured_key
+    if key: st.caption('환경변수 또는 Streamlit Secrets의 API 키를 사용합니다.')
+    else: st.warning('API 키가 설정되지 않았습니다. Streamlit Secrets에 YOUTUBE_API_KEY를 설정해 주세요. 엑셀 분석은 계속 사용할 수 있습니다.')
     if st.button('API 연결 확인'):
-        if not key: st.warning('먼저 API 키를 입력해 주세요.')
+        if not key: st.warning('Streamlit Secrets 또는 환경변수에 YOUTUBE_API_KEY를 설정해 주세요.')
         else:
             try:
                 popular_chart(key,limit=1)
@@ -148,7 +152,7 @@ def video_report(rows,title,period,at,identifier):
     downloads(title,meta('YouTube Data API 공개 데이터 / 조회 '+at,period,f'표본 {len(rows)}건. 조회수는 조회 시점의 누적값입니다. 전체 목록이나 실제 유입 검색어가 아닙니다.'),['발행일','콘텐츠','누적 조회수','영상 URL'],data,identifier)
 
 def require_key():
-    if not key:st.warning('왼쪽에서 YouTube Data API 키를 입력해 주세요.');return False
+    if not key:st.warning('Streamlit Secrets 또는 환경변수에 YOUTUBE_API_KEY를 설정해 주세요.');return False
     return True
 
 weekly,monthly,detail,trends,million=st.tabs(['주간 리포트','월간 리포트','콘텐츠 상세','주간·월간 트렌드','100만 조회 콘텐츠'])
@@ -211,7 +215,7 @@ with million:
     if not key:
         st.session_state.million_results=None
         st.session_state.pop('million_request',None)
-        st.info('왼쪽에 YouTube API 키를 입력하고 Enter를 누르면 자동으로 불러옵니다.')
+        st.info('Streamlit Secrets 또는 환경변수에 API 키를 설정하면 자동으로 불러옵니다.')
     elif end<start:
         st.session_state.million_results=None
         st.error('발행 종료일은 시작일보다 빠를 수 없습니다.')

@@ -29,7 +29,7 @@ def render(key,today,time_now,keyword_display,video_report):
     seeds=list(dict.fromkeys(x.strip() for x in topic_text.splitlines() if x.strip()))
     refresh=st.button('트렌드 다시 불러오기',key='reload_auto_trend')
     if not key:
-        st.info('왼쪽에서 YouTube API 키를 입력하고 Enter를 누르면 자동으로 분석합니다.')
+        st.info('Streamlit Secrets 또는 환경변수에 API 키를 설정하면 자동으로 분석합니다.')
         return
     if not 1<=len(seeds)<=10:
         st.error('검색 주제를 1개 이상 10개 이하로 입력해 주세요.')
